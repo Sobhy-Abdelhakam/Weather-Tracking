@@ -1,6 +1,7 @@
 package dev.sobhy.weathertracking.data.remote
 
 import android.util.Log
+import dev.sobhy.weathertracking.BuildConfig
 import dev.sobhy.weathertracking.domain.model.ForecastDay
 import dev.sobhy.weathertracking.domain.model.WeatherInfo
 import org.json.JSONObject
@@ -10,7 +11,7 @@ import java.net.URL
 object WeatherApiService {
     private const val BASE_URL =
         "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline"
-    private const val API_KEY = ""
+    private const val API_KEY = BuildConfig.WEATHER_API_KEY
 
     fun fetchWeatherJson(lat: Double, long: Double): String? {
         val urlStr = "$BASE_URL/$lat,$long/today?unitGroup=metric&key=$API_KEY&include=current"
