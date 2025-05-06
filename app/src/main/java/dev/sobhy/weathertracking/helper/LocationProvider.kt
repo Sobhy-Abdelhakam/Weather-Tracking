@@ -1,73 +1,90 @@
 package dev.sobhy.weathertracking.helper
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
-import android.location.LocationListener
-import android.location.LocationManager
-import androidx.annotation.RequiresPermission
-import androidx.core.app.ActivityCompat
+import androidx.activity.result.IntentSenderRequest
+import androidx.core.content.ContextCompat
+import com.google.android.gms.common.api.ResolvableApiException
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.LocationSettingsRequest
+import com.google.android.gms.location.Priority
 
-class LocationProvider(
-    private val context: Context,
-    private val listener: (Double, Double) -> Unit,
-    private val errorCallback: (String) -> Unit,
-) {
-    private val locationManager =
-        context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+class LocationProvider(private val context: Context) {
+    private val fusedClient = LocationServices.getFusedLocationProviderClient(context)
+    private val settingsClient = LocationServices.getSettingsClient(context)
 
-    private val locationListener = object : LocationListener {
-        override fun onLocationChanged(location: Location) {
-            listener(location.latitude, location.longitude)
-            locationManager.removeUpdates(this)
-        }
-
-        override fun onProviderDisabled(provider: String) {
-            errorCallback("GPS is disabled.")
-        }
+    fun hasLocationPermission(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
     }
 
-    fun getLastKnownLocation() {
-        if (ActivityCompat.checkSelfPermission(
-                context,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
-                context,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            errorCallback("Location permissions not granted")
-            return
-        }
+    fun checkLocationSettings(
+        onSuccess: (Location) -> Unit,
+        onResolutionRequired: (IntentSenderRequest) -> Unit,
+        onFallbackToLastLocation: (Location?) -> Unit,
+        onFailure: (Exception) -> Unit,
+    ) {
+        val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000).build()
 
-        val provider = LocationManager.GPS_PROVIDER
-        val lastLocation = locationManager.getLastKnownLocation(provider)
+        val settingsRequest = LocationSettingsRequest.Builder()
+            .addLocationRequest(locationRequest)
+            .setAlwaysShow(true)
+            .build()
 
-        if (lastLocation != null) {
-            listener(lastLocation.latitude, lastLocation.longitude)
-        } else {
-            requestUpdate()
-        }
+        settingsClient.checkLocationSettings(settingsRequest)
+            .addOnSuccessListener {
+                getCurrentLocation(onSuccess, onFailure)
+            }
+            .addOnFailureListener { exception ->
+                if (exception is ResolvableApiException) {
+                    val intentSenderRequest =
+                        IntentSenderRequest.Builder(exception.resolution).build()
+                    onResolutionRequired(intentSenderRequest)
+                } else {
+                    getLastKnownLocation(
+                        onSuccess = onFallbackToLastLocation,
+                        onFailure = onFailure
+                    )
+                }
+            }
+    }
+
+    @SuppressLint("MissingPermission")
+    fun getCurrentLocation(
+        onSuccess: (Location) -> Unit,
+        onFailure: (Exception) -> Unit,
+    ) {
+        fusedClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
+            .addOnSuccessListener { location ->
+                if (location != null) {
+                    onSuccess(location)
+                } else {
+                    onFailure(Exception("Current location is null"))
+                }
+            }
+            .addOnFailureListener(onFailure)
 
     }
 
-    @RequiresPermission(allOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
-    private fun requestUpdate() {
-        try {
-            locationManager.requestLocationUpdates(
-                LocationManager.GPS_PROVIDER,
-                0L,
-                0f,
-                locationListener,
-                null
-            )
-        } catch (e: Exception) {
-            errorCallback("Failed to get location: ${e.message}")
-        }
+    @SuppressLint("MissingPermission")
+    fun getLastKnownLocation(
+        onSuccess: (Location?) -> Unit,
+        onFailure: (Exception) -> Unit,
+    ) {
+        fusedClient.lastLocation
+            .addOnSuccessListener(onSuccess)
+            .addOnFailureListener(onFailure)
     }
 
-    companion object {
-        const val LOCATION_PERMISSION_REQUEST_CODE = 100
-    }
+
+
 }
