@@ -52,7 +52,7 @@ class MainActivity : ComponentActivity() {
     private val resolutionLauncher =
         registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
             if (result.resultCode == RESULT_OK) {
-                checkGpsAndFetchLocation()
+                fetchCurrentLocation()
             } else {
                 fetchLastLocation()
             }
@@ -127,7 +127,7 @@ class MainActivity : ComponentActivity() {
     @SuppressLint("MissingPermission")
     private fun checkGpsAndFetchLocation() {
         locationProvider.checkAndGetLocation(
-            onSuccess = { updateLocation(it) },
+            onSuccess = ::updateLocation,
             onResolutionRequired = { resolutionLauncher.launch(it) },
             onFallbackToLastLocation = { location ->
                 if (location != null){
@@ -136,6 +136,12 @@ class MainActivity : ComponentActivity() {
                 }
                 else showError("No last known location found and GPS is off.")
             },
+            onFailure = { showError("Location error: ${it.message}") }
+        )
+    }
+    private fun fetchCurrentLocation() {
+        locationProvider.getCurrentLocation(
+            onSuccess = ::updateLocation,
             onFailure = { showError("Location error: ${it.message}") }
         )
     }
