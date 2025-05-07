@@ -3,6 +3,9 @@ package dev.sobhy.weathertracking.data.local
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
+import dev.sobhy.weathertracking.helper.Constant.KEY_CURRENT_WEATHER
+import dev.sobhy.weathertracking.helper.Constant.KEY_FORECAST_WEATHER
+import dev.sobhy.weathertracking.helper.Constant.PREF_NAME
 
 class WeatherCacheManager(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
@@ -28,11 +31,5 @@ class WeatherCacheManager(context: Context) {
     }
     private fun loadData(key: String): String? {
         return prefs.getString(key, null)
-    }
-
-    companion object{
-        private const val PREF_NAME = "weather_cache"
-        private const val KEY_CURRENT_WEATHER = "current_weather_json"
-        private const val KEY_FORECAST_WEATHER = "forecast_weather_json"
     }
 }

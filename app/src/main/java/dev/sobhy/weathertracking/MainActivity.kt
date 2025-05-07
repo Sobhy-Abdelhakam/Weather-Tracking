@@ -2,8 +2,12 @@ package dev.sobhy.weathertracking
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Context
 import android.location.Location
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -11,8 +15,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -48,9 +54,9 @@ class MainActivity : ComponentActivity() {
     private val resolutionLauncher =
         registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
             if (result.resultCode == RESULT_OK) {
-                fetchLocation()
+                checkGpsAndFetchLocation()
             } else {
-                errorMessage = "GPS is required to fetch location"
+                fetchLastLocation()
             }
         }
 
@@ -60,6 +66,9 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             WeatherTrackingTheme {
+                if (!isNetworkAvailable()){
+                    Toast.makeText(this, "No Internet connection", Toast.LENGTH_SHORT).show()
+                }
                 LaunchedEffect(Unit) {
                     if (locationProvider.hasLocationPermission()) {
                         checkGpsAndFetchLocation()
@@ -86,10 +95,18 @@ class MainActivity : ComponentActivity() {
                             WeatherNavGraph(latitude!!, longitude!!)
                         }
                         errorMessage != null -> {
-                            Text(
-                                text = errorMessage ?: "Error",
-                                style = MaterialTheme.typography.headlineLarge
+                            AlertDialog(
+                                onDismissRequest = {},
+                                confirmButton = {},
+                                title = { Text("Error") },
+                                text = {
+                                    Text(
+                                        text = errorMessage ?: "Error",
+                                        style = MaterialTheme.typography.headlineLarge
+                                    )
+                                }
                             )
+
                         }
                         else -> {
                             CircularProgressIndicator()
@@ -111,23 +128,26 @@ class MainActivity : ComponentActivity() {
 
     @SuppressLint("MissingPermission")
     private fun checkGpsAndFetchLocation() {
-        locationProvider.checkLocationSettings(
+        locationProvider.checkAndGetLocation(
             onSuccess = { updateLocation(it) },
             onResolutionRequired = { resolutionLauncher.launch(it) },
             onFallbackToLastLocation = { location ->
-                if (location != null) updateLocation(location)
-                else showError("No last known location available")
+                if (location != null){
+                    updateLocation(location)
+                    showError("GPS is off, showing last known location.")
+                }
+                else showError("No last known location found and GPS is off.")
             },
             onFailure = { showError("Location error: ${it.message}") }
         )
     }
-    private fun fetchLocation() {
+    private fun fetchLastLocation() {
         locationProvider.getLastKnownLocation(
             onSuccess = { location ->
                 if (location != null) updateLocation(location)
                 else showError("No last known location found")
             },
-            onFailure = { showError("error: ${it.message}") }
+//            onFailure = { showError("error: ${it.message}") }
         )
     }
     private fun updateLocation(location: Location) {
@@ -137,5 +157,11 @@ class MainActivity : ComponentActivity() {
     }
     private fun showError(message: String) {
         errorMessage = message
+    }
+    fun isNetworkAvailable(): Boolean {
+        val connectivityManager = getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
+        val network = connectivityManager.activeNetwork ?: return false
+        val networkCapabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
+        return networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
     }
 }
