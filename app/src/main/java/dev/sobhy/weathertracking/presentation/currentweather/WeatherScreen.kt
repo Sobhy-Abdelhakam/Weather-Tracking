@@ -1,6 +1,5 @@
 package dev.sobhy.weathertracking.presentation.currentweather
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,15 +29,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavHostController
 import dev.sobhy.weathertracking.domain.model.WeatherInfo
-import dev.sobhy.weathertracking.presentation.currentweather.WeatherViewModel
-import dev.sobhy.weathertracking.presentation.navigation.Screen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,7 +52,6 @@ fun WeatherScreen(
         // avoid multiple calls
         if (!state.isLoading && state.weather == null) {
             viewModel.loadWeather(latitude, longitude)
-            Log.d("WeatherScreen", "lat: $latitude, long: $longitude")
         }
     }
 

@@ -1,14 +1,11 @@
 package dev.sobhy.weathertracking.presentation.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import dev.sobhy.weathertracking.presentation.forecast.ForecastScreen
 import dev.sobhy.weathertracking.presentation.currentweather.WeatherScreen
-import dev.sobhy.weathertracking.presentation.currentweather.WeatherViewModel
-import dev.sobhy.weathertracking.presentation.forecast.ForecastViewModel
+import dev.sobhy.weathertracking.presentation.forecast.ForecastScreen
 
 @Composable
 fun WeatherNavGraph(
