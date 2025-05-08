@@ -21,7 +21,6 @@ import dev.sobhy.weathertracking.helper.Constant.PREF_NAME
 class LocationProvider(private val context: Context) {
     private val fusedClient = LocationServices.getFusedLocationProviderClient(context)
     private val settingsClient = LocationServices.getSettingsClient(context)
-
     private val prefs: SharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
 
     fun hasLocationPermission(): Boolean {
@@ -59,7 +58,6 @@ class LocationProvider(private val context: Context) {
                 } else {
                     getLastKnownLocation(
                         onSuccess = onFallbackToLastLocation,
-//                        onFailure = onFailure
                     )
                 }
             }
@@ -72,55 +70,47 @@ class LocationProvider(private val context: Context) {
     ) {
         fusedClient.getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, null)
             .addOnSuccessListener { location ->
-                if (location != null) {
-                    onSuccess(location)
-                    prefs.edit {
-                        putString(KEY_LATITUDE, location.latitude.toString())
-                        putString(KEY_LONGITUDE, location.longitude.toString())
-                        apply()
-                    }
-                } else {
-                    onFailure(Exception("Can't get current location"))
-                }
+                location?.let {
+                    onSuccess(it)
+                    saveLocationToPrefs(it)
+                } ?: onFailure(Exception("Can't get current location"))
             }
             .addOnFailureListener(onFailure)
 
     }
 
     /**
+     * "lastKnownLocation" is a method that returns the last known location of the device.
+     *
      * ohh, based on the developer.android documentation the location object may be null
      * if the location is turned off in the device settings.
      * The result could be null even if the last location was previously
      * retrieved because disabling location also clears the cache.
+     *
+     * so I resorted to an alternative solution,
+     * which is to save the location locally when location is active,
+     * and retrieve it from the locale in case the location is not activated
      * **/
     @SuppressLint("MissingPermission")
     fun getLastKnownLocation(
         onSuccess: (Location?) -> Unit,
-//        onFailure: (Exception) -> Unit,
     ) {
-//        fusedClient.lastLocation
-//            .addOnSuccessListener(onSuccess)
-//            .addOnFailureListener(onFailure)
-
-        /**
-         * I have a problem with lastKnownLocation, which is that it always returns a null value,
-         * so I resorted to an alternative solution,
-         * which is to save the location locally when location is active
-         * , and retrieve it from the locale in case the location is not activated
-        * */
-
         val latitude = prefs.getString(KEY_LATITUDE, null)?.toDoubleOrNull()
         val longitude = prefs.getString(KEY_LONGITUDE, null)?.toDoubleOrNull()
         if (latitude != null && longitude != null) {
-            val location = Location("last_known")
-            location.latitude = latitude
-            location.longitude = longitude
-            onSuccess(location)
+            Location("last_known").apply {
+                this.latitude = latitude
+                this.longitude = longitude
+            }.also(onSuccess)
         } else {
             onSuccess(null)
         }
     }
-
-
-
+    private fun saveLocationToPrefs(location: Location) {
+        prefs.edit {
+            putString(KEY_LATITUDE, location.latitude.toString())
+            putString(KEY_LONGITUDE, location.longitude.toString())
+            apply()
+        }
+    }
 }

@@ -30,6 +30,7 @@ class MainActivity : ComponentActivity() {
             viewModel.showError("Location permission denied")
         }
     }
+
     // Launcher to resolve GPS enable request
     private val resolutionLauncher =
         registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
@@ -48,8 +49,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             val state by viewModel.uiState
             WeatherTrackingTheme {
-                if (!isNetworkAvailable(this)){
-                    Toast.makeText(this, "No Internet connection", Toast.LENGTH_SHORT).show()
+                if (!isNetworkAvailable(this)) {
+                    showToast("No Internet connection")
                 }
                 LaunchedEffect(Unit) {
                     viewModel.setLoading()
@@ -63,6 +64,7 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
     private fun requestLocationPermission() {
         locationPermissionRequest.launch(
             arrayOf(
@@ -80,23 +82,29 @@ class MainActivity : ComponentActivity() {
             onFallbackToLastLocation = { location ->
                 location?.let {
                     viewModel.updateLocation(it)
-                    viewModel.showError("GPS is off, using last known location.")
+                    showToast("GPS is off, using last known location.")
                 } ?: viewModel.showError("GPS off and no last known location.")
             },
             onFailure = { viewModel.showError("Location error: ${it.message}") }
         )
     }
+
     private fun fetchCurrentLocation() {
         locationProvider.getCurrentLocation(
             onSuccess = viewModel::updateLocation,
             onFailure = { viewModel.showError("Location error: ${it.message}") }
         )
     }
+
     private fun fetchLastLocation() {
         locationProvider.getLastKnownLocation { location ->
             location?.let {
                 viewModel.updateLocation(it)
             } ?: viewModel.showError("No last known location found.")
         }
+    }
+
+    private fun showToast(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 }
