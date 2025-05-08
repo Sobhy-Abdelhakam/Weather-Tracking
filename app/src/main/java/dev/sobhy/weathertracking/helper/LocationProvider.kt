@@ -87,6 +87,12 @@ class LocationProvider(private val context: Context) {
 
     }
 
+    /**
+     * ohh, based on the developer.android documentation the location object may be null
+     * if the location is turned off in the device settings.
+     * The result could be null even if the last location was previously
+     * retrieved because disabling location also clears the cache.
+     * **/
     @SuppressLint("MissingPermission")
     fun getLastKnownLocation(
         onSuccess: (Location?) -> Unit,
