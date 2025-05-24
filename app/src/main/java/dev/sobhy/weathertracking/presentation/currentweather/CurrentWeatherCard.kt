@@ -31,10 +31,10 @@ import kotlin.math.roundToInt
 fun CurrentWeatherCard(
     weatherData: WeatherData,
     containerColor: Color,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val weather = weatherData.currentWeatherData
-    ElevatedCard (
+    ElevatedCard(
         elevation = CardDefaults.elevatedCardElevation(
             defaultElevation = 2.dp
         ),
@@ -53,7 +53,6 @@ fun CurrentWeatherCard(
         ) {
             Text(
                 "Today, ${weather.time}",
-//                color = Color.White,
                 modifier = Modifier.align(Alignment.End)
             )
             Image(
@@ -65,33 +64,28 @@ fun CurrentWeatherCard(
             Text(
                 "${weather.temperature.toInt()}°",
                 style = MaterialTheme.typography.displayLarge,
-//                color = Color.White,
             )
             Text(
                 "${weatherData.minTemp.roundToInt()}° / ${weatherData.maxTemp.roundToInt()}°",
-//                color = Color.White,
                 style = MaterialTheme.typography.labelLarge
             )
             Text(
                 weather.description,
-//                color = Color.White,
                 style = MaterialTheme.typography.titleMedium,
             )
-            Row (
+            Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceAround
-            ){
+            ) {
                 WeatherDataDisplay(
                     value = weather.pressure,
                     unit = "hpa",
                     icon = ImageVector.vectorResource(id = R.drawable.ic_pressure),
-//                    textStyle = TextStyle(color = Color.White)
                 )
                 WeatherDataDisplay(
                     value = weather.humidity.roundToInt(),
                     unit = "%",
                     icon = ImageVector.vectorResource(id = R.drawable.ic_drop),
-//                    textStyle = TextStyle(color = Color.White)
                 )
                 WeatherDataDisplay(
                     value = weather.windSpeed.roundToInt(),
@@ -112,16 +106,14 @@ fun WeatherDataDisplay(
     icon: ImageVector,
     modifier: Modifier = Modifier,
     textStyle: TextStyle = TextStyle(),
-    iconTint: Color = Color.White,
 ) {
-    Row (
+    Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically
-    ){
+    ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
-//            tint = iconTint,
             modifier = Modifier.size(25.dp)
         )
         Spacer(modifier = Modifier.width(4.dp))

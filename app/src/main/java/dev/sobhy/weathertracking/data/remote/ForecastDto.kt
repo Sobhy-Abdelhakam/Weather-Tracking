@@ -1,6 +1,5 @@
 package dev.sobhy.weathertracking.data.remote
 
-import dev.sobhy.weathertracking.domain.model.ForecastDay
 import org.json.JSONObject
 
 data class ForecastDto(
@@ -8,10 +7,10 @@ data class ForecastDto(
     val maxTemp: Double,
     val minTemp: Double,
     val description: String,
-    val icon: String
+    val icon: String,
 ) {
     companion object {
-        fun fromJson(json: JSONObject): ForecastDto{
+        fun fromJson(json: JSONObject): ForecastDto {
             return ForecastDto(
                 date = json.getString("datetime"),
                 maxTemp = json.getDouble("tempmax"),

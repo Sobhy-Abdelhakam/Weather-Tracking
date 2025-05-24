@@ -27,14 +27,5 @@ data class WeatherResponseDto(
                 hours = hourlyList
             )
         }
-
-        fun toJson(weather: WeatherResponseDto): JSONObject {
-            return JSONObject().apply {
-                put("currentConditions", HourlyDto.toJson(weather.currentHour).toString())
-                put("tempmin", weather.minTemp)
-                put("tempmax", weather.maxTemp)
-                put("hours", JSONArray(weather.hours.map { HourlyDto.toJson(it) }).toString())
-            }
-        }
     }
 }

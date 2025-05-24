@@ -1,4 +1,4 @@
-package dev.sobhy.weathertracking.domain.model
+package dev.sobhy.weathertracking.domain.weather
 
 data class ForecastDay(
     val date: String,

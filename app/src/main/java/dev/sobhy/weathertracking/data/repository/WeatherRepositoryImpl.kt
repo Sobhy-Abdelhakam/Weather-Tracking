@@ -4,7 +4,7 @@ import dev.sobhy.weathertracking.data.local.WeatherCacheManager
 import dev.sobhy.weathertracking.data.mappers.toForecastDays
 import dev.sobhy.weathertracking.data.mappers.toWeatherData
 import dev.sobhy.weathertracking.data.remote.WeatherApiService
-import dev.sobhy.weathertracking.domain.model.ForecastDay
+import dev.sobhy.weathertracking.domain.weather.ForecastDay
 import dev.sobhy.weathertracking.domain.repository.WeatherRepository
 import dev.sobhy.weathertracking.domain.util.Resource
 import dev.sobhy.weathertracking.domain.weather.WeatherData

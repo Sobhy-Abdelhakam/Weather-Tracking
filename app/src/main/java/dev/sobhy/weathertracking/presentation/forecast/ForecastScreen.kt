@@ -18,7 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import dev.sobhy.weathertracking.domain.model.ForecastDay
+import dev.sobhy.weathertracking.domain.weather.ForecastDay
 
 @Composable
 fun ForecastScreen(

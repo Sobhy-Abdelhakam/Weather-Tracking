@@ -1,7 +1,6 @@
 package dev.sobhy.weathertracking.domain.repository
 
-import dev.sobhy.weathertracking.domain.model.ForecastDay
-import dev.sobhy.weathertracking.domain.model.WeatherInfo
+import dev.sobhy.weathertracking.domain.weather.ForecastDay
 import dev.sobhy.weathertracking.domain.util.Resource
 import dev.sobhy.weathertracking.domain.weather.WeatherData
 

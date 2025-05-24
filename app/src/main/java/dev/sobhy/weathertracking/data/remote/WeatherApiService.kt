@@ -1,9 +1,5 @@
 package dev.sobhy.weathertracking.data.remote
 
-import android.util.Log
-import dev.sobhy.weathertracking.BuildConfig
-import dev.sobhy.weathertracking.domain.model.ForecastDay
-import dev.sobhy.weathertracking.domain.model.WeatherInfo
 import dev.sobhy.weathertracking.helper.Constant.API_KEY
 import dev.sobhy.weathertracking.helper.Constant.BASE_URL
 import kotlinx.coroutines.Dispatchers

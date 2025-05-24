@@ -9,7 +9,6 @@ import dev.sobhy.weathertracking.helper.Constant.FORECAST_TABLE
 import dev.sobhy.weathertracking.helper.Constant.TODAY_WEATHER_TABLE
 import org.json.JSONArray
 import org.json.JSONObject
-import androidx.core.database.sqlite.transaction
 
 class WeatherCacheManager(private val dbHelper: WeatherDatabaseHelper) {
 
@@ -25,6 +24,7 @@ class WeatherCacheManager(private val dbHelper: WeatherDatabaseHelper) {
         db.delete(TODAY_WEATHER_TABLE, null, null)
         db.insert(TODAY_WEATHER_TABLE, null, values)
     }
+
     fun getCachedTodayWeather(): WeatherResponseDto? {
         val db = dbHelper.readableDatabase
         val cursor = db.rawQuery("SELECT * FROM $TODAY_WEATHER_TABLE LIMIT 1", null)
@@ -64,18 +64,19 @@ class WeatherCacheManager(private val dbHelper: WeatherDatabaseHelper) {
         db.delete(FORECAST_TABLE, null, null)
         db.insert(FORECAST_TABLE, null, values)
     }
+
     fun getCachedForecast(): ForecastResponseDto? {
         val db = dbHelper.readableDatabase
         val cursor = db.rawQuery("SELECT * FROM $FORECAST_TABLE LIMIT 1", null)
         var forecast: ForecastResponseDto? = null
 
-        cursor.use{
-            if (it.moveToFirst()){
+        cursor.use {
+            if (it.moveToFirst()) {
                 val forecastStr = it.getString(it.getColumnIndexOrThrow("forecast_json"))
                 val forecastArray = JSONArray(forecastStr)
 
                 val forecastList = mutableListOf<ForecastDto>()
-                for (i in 0 until forecastArray.length()){
+                for (i in 0 until forecastArray.length()) {
                     forecastList.add(ForecastDto.fromJson(forecastArray.getJSONObject(i)))
                 }
                 forecast = ForecastResponseDto(forecastList)

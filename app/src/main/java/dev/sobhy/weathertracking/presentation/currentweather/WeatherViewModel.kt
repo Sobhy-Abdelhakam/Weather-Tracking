@@ -27,17 +27,15 @@ import dev.sobhy.weathertracking.WeatherApplication
 import dev.sobhy.weathertracking.domain.location.LocationTracker
 import dev.sobhy.weathertracking.domain.repository.WeatherRepository
 import dev.sobhy.weathertracking.domain.util.Resource
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.util.Locale
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
 class WeatherViewModel(
     private val repository: WeatherRepository,
-    private val locationTracker: LocationTracker
-): ViewModel() {
+    private val locationTracker: LocationTracker,
+) : ViewModel() {
     var state by mutableStateOf(WeatherUiState())
         private set
     var lat by mutableDoubleStateOf(0.0)
@@ -52,23 +50,25 @@ class WeatherViewModel(
             val location = locationTracker.getCurrentLocation()
             location?.let { lat = it.latitude; long = it.longitude }
 
-                when(val result = repository.getTodayWeather(location?.latitude, location?.longitude)){
-                    is Resource.Success -> {
-                        state = state.copy(
-                            isLoading = false,
-                            error = null,
-                            weatherData = result.data
-                        )
-                    }
-                    is Resource.Error -> {
-                        state = state.copy(
-                            isLoading = false,
-                            weatherData = null,
-                            error = result.message
-                        )
-                    }
+            when (val result =
+                repository.getTodayWeather(location?.latitude, location?.longitude)) {
+                is Resource.Success -> {
+                    state = state.copy(
+                        isLoading = false,
+                        error = null,
+                        weatherData = result.data
+                    )
                 }
-                Log.e("state", state.toString())
+
+                is Resource.Error -> {
+                    state = state.copy(
+                        isLoading = false,
+                        weatherData = null,
+                        error = result.message
+                    )
+                }
+            }
+            Log.e("state", state.toString())
         }
     }
 
@@ -79,7 +79,7 @@ class WeatherViewModel(
     ): String = suspendCoroutine { continuation ->
         val geocoder = Geocoder(context, Locale.getDefault())
         try {
-            geocoder.getFromLocation(lat, long, 1, object : Geocoder.GeocodeListener{
+            geocoder.getFromLocation(lat, long, 1, object : Geocoder.GeocodeListener {
                 override fun onGeocode(addresses: List<Address?>) {
                     val address = addresses.firstOrNull()
                     val locality = address?.locality.orEmpty()
@@ -99,15 +99,16 @@ class WeatherViewModel(
                     continuation.resume("Unknown Location")
                 }
             })
-        } catch (e: Exception){
+        } catch (e: Exception) {
             Log.e("Geocoder", "Failed to get address", e)
             continuation.resume("Unknown Location")
         }
     }
+
     fun checkLocationSetting(
         context: Context,
         onDisabled: (IntentSenderRequest) -> Unit,
-        onEnabled: () -> Unit
+        onEnabled: () -> Unit,
     ) {
 
         val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000)

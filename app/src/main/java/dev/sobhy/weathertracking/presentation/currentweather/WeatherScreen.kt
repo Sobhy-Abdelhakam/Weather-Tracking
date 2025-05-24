@@ -32,7 +32,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -41,8 +40,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.sobhy.weathertracking.domain.weather.WeatherData
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -93,7 +90,7 @@ fun WeatherScreen(
 
     var locationName by remember { mutableStateOf("") }
     LaunchedEffect(viewModel.lat, viewModel.long) {
-            locationName = viewModel.getAddressText(context, viewModel.lat, viewModel.long)
+        locationName = viewModel.getAddressText(context, viewModel.lat, viewModel.long)
     }
 
     Scaffold {

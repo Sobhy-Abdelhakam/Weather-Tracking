@@ -1,6 +1,5 @@
 package dev.sobhy.weathertracking.data.remote
 
-import org.json.JSONArray
 import org.json.JSONObject
 
 data class ForecastResponseDto(
@@ -16,12 +15,6 @@ data class ForecastResponseDto(
                 forecastList.add(ForecastDto.fromJson(day))
             }
             return ForecastResponseDto(forecastList)
-        }
-
-        fun toJson(forecast: ForecastResponseDto): JSONObject {
-            return JSONObject().apply {
-                put("days", JSONArray(forecast.forecastDays.map { ForecastDto.toJson(it) }).toString())
-            }
         }
     }
 }
