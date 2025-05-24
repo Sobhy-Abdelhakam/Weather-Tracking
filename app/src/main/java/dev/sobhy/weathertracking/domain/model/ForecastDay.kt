@@ -5,5 +5,5 @@ data class ForecastDay(
     val maxTemp: Double,
     val minTemp: Double,
     val description: String,
-    val icon: String
+    val icon: Int
 )
