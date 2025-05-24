@@ -1,6 +1,5 @@
 package dev.sobhy.weathertracking.data.remote
 
-import org.json.JSONArray
 import org.json.JSONObject
 
 data class WeatherResponseDto(
