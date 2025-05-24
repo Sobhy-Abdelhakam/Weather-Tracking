@@ -91,8 +91,9 @@ fun WeatherScreen(
         )
     }
 
-    val locationName by produceState(initialValue = "") {
-        value = viewModel.getAddressText(context, viewModel.lat, viewModel.long)
+    var locationName by remember { mutableStateOf("") }
+    LaunchedEffect(viewModel.lat, viewModel.long) {
+            locationName = viewModel.getAddressText(context, viewModel.lat, viewModel.long)
     }
 
     Scaffold {
@@ -112,45 +113,19 @@ fun WeatherScreen(
             modifier = Modifier.padding(it)
         ) {
             when {
-                refreshing -> Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
+                refreshing -> LoadingUI()
+
+                state.error != null -> ErrorUI(state.error) { viewModel.loadWeather() }
+
+                else -> state.weatherData?.let { weather ->
+                    Content(weather, navigateToForecastScreen, locationName)
                 }
 
-                state.error != null -> Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Error: ${state.error}")
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Button(onClick = { viewModel.loadWeather() }) {
-                            Text("Retry")
-                        }
-                    }
-                }
-
-                else -> {
-                    state.weatherData?.let { weather ->
-                        Column {
-                            Content(
-                                weather = weather,
-                                forecastClick = navigateToForecastScreen,
-                                locationName
-                            )
-                        }
-                    }
-                }
             }
         }
     }
 }
+
 @Composable
 fun LoadingUI() {
     Box(
@@ -162,6 +137,7 @@ fun LoadingUI() {
         CircularProgressIndicator()
     }
 }
+
 @Composable
 fun ErrorUI(errorMessage: String, onRetry: () -> Unit) {
     Box(
@@ -189,16 +165,15 @@ fun Content(weather: WeatherData, forecastClick: () -> Unit, locationName: Strin
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         LocationHeader(locationName, modifier = Modifier.align(Alignment.CenterHorizontally))
-//        Spacer(modifier = Modifier.height(16.dp))
         CurrentWeatherCard(
             weatherData = weather,
             containerColor = MaterialTheme.colorScheme.primaryContainer,
             modifier = Modifier.fillMaxWidth()
         )
-//        Spacer(modifier = Modifier.height(16.dp))
         TodayWeather(weather.weatherDuringTheDay, forecastClick)
     }
 }
+
 @Composable
 fun LocationHeader(locationName: String, modifier: Modifier = Modifier) {
     Row(
