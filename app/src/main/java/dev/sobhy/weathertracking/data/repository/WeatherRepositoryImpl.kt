@@ -1,61 +1,60 @@
 package dev.sobhy.weathertracking.data.repository
 
-import android.os.Handler
-import android.os.Looper
 import dev.sobhy.weathertracking.data.local.WeatherCacheManager
+import dev.sobhy.weathertracking.data.mappers.toForecastDays
+import dev.sobhy.weathertracking.data.mappers.toWeatherData
 import dev.sobhy.weathertracking.data.remote.WeatherApiService
 import dev.sobhy.weathertracking.domain.model.ForecastDay
-import dev.sobhy.weathertracking.domain.model.WeatherInfo
 import dev.sobhy.weathertracking.domain.repository.WeatherRepository
+import dev.sobhy.weathertracking.domain.util.Resource
+import dev.sobhy.weathertracking.domain.weather.WeatherData
 
 class WeatherRepositoryImpl(
+    private val apiService: WeatherApiService,
     private val cacheManager: WeatherCacheManager
 ): WeatherRepository {
 
-    override fun getCurrentWeather(
-        lat: Double,
-        long: Double,
-        onSuccess: (WeatherInfo) -> Unit,
-        onError: (String) -> Unit
-    ) {
-        Thread{
-            val jsonFromNetwork = WeatherApiService.fetchWeatherJson(lat, long)
-            val finalJson = jsonFromNetwork ?: cacheManager.getCachedCurrentWeatherJson()
-            jsonFromNetwork?.let { cacheManager.saveCurrentWeatherJson(it) }
-
-            val weatherData =  WeatherApiService.parseWeatherJson(finalJson)
-            Handler(Looper.getMainLooper()).post {
-                if (weatherData != null) {
-                    onSuccess(weatherData)
-                } else {
-                    onError("Failed to fetch weather data")
+    override suspend fun getTodayWeather(lat: Double?, long: Double?): Resource<WeatherData> {
+        return try {
+            when {
+                lat != null && long != null -> {
+                    val dto = apiService.fetchTodayWeather(lat, long)
+                    cacheManager.cacheTodayWeather(dto)
+                    Resource.Success(dto.toWeatherData())
+                }
+                else -> {
+                    val dto = cacheManager.getCachedTodayWeather()
+                    dto?.let {
+                        Resource.Success(it.toWeatherData())
+                    } ?: Resource.Error("No cached data available.")
                 }
             }
-        }.start()
-
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Resource.Error(e.localizedMessage ?: "An unknown error occurred.")
+        }
     }
 
-    override fun getForecastWeather(
+    override suspend fun getForecastWeather(
         lat: Double,
         long: Double,
-        onSuccess: (List<ForecastDay>) -> Unit,
-        onError: (String) -> Unit
-    ){
-        Thread {
-            val jsonFromNetwork = WeatherApiService.fetchForecastJson(lat, long)
-            val finalJson = jsonFromNetwork ?: cacheManager.getCachedForecastWeatherJson()
-            jsonFromNetwork?.let { cacheManager.saveForecastWeatherJson(it) }
+    ): Resource<List<ForecastDay>>{
+        return try {
+            val freshForecast = apiService.fetchForecastJson(lat, long)
+            cacheManager.cacheForecast(freshForecast)
 
-            val forecastData =  WeatherApiService.parseForecastJson(finalJson)
+            Resource.Success(freshForecast.toForecastDays())
+        } catch (e: Exception) {
+            e.printStackTrace()
 
-            Handler(Looper.getMainLooper()).post {
-                if (forecastData != null) {
-                    onSuccess(forecastData)
-                } else {
-                    onError("failed to fetch forecast data")
-                }
+            // Try fallback to cached data
+            val cachedForecast = cacheManager.getCachedForecast()
+            if (cachedForecast != null) {
+                Resource.Success(cachedForecast.toForecastDays())
+            } else {
+                Resource.Error(e.localizedMessage ?: "An unknown error occurred.")
             }
-        }.start()
+        }
 
     }
 }

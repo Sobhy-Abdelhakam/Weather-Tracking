@@ -2,8 +2,11 @@ package dev.sobhy.weathertracking.domain.repository
 
 import dev.sobhy.weathertracking.domain.model.ForecastDay
 import dev.sobhy.weathertracking.domain.model.WeatherInfo
+import dev.sobhy.weathertracking.domain.util.Resource
+import dev.sobhy.weathertracking.domain.weather.WeatherData
 
 interface WeatherRepository {
-    fun getCurrentWeather(lat: Double, long: Double, onSuccess: (WeatherInfo) -> Unit, onError: (String) -> Unit)
-    fun getForecastWeather(lat: Double, long: Double, onSuccess: (List<ForecastDay>) -> Unit, onError: (String) -> Unit)
+    suspend fun getTodayWeather(lat: Double?, long: Double?): Resource<WeatherData>
+
+    suspend fun getForecastWeather(lat: Double, long: Double): Resource<List<ForecastDay>>
 }
