@@ -8,19 +8,21 @@ import dev.sobhy.weathertracking.presentation.currentweather.WeatherScreen
 import dev.sobhy.weathertracking.presentation.forecast.ForecastScreen
 
 @Composable
-fun WeatherNavGraph(
-    latitude: Double,
-    longitude: Double
-) {
+fun WeatherNavGraph() {
     val navController = rememberNavController()
-    NavHost(navController = navController, startDestination = Screen.CurrentWeather.route) {
+    NavHost(
+        navController = navController,
+        startDestination = Screen.CurrentWeather.route,
+    ) {
         composable(route = Screen.CurrentWeather.route) {
-            WeatherScreen(latitude, longitude){
-                navController.navigate(Screen.Forecast.route)
-            }
+            WeatherScreen(
+                navigateToForecastScreen = {
+                    navController.navigate(Screen.Forecast.route)
+                },
+            )
         }
         composable(route = Screen.Forecast.route) {
-            ForecastScreen(latitude, longitude)
+            ForecastScreen()
         }
     }
 }

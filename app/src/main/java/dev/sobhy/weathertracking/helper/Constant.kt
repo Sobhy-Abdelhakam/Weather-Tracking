@@ -1,9 +1,10 @@
 package dev.sobhy.weathertracking.helper
 
+import dev.sobhy.weathertracking.BuildConfig
+
 object Constant {
-    const val PREF_NAME = "weather_cache"
-    const val KEY_CURRENT_WEATHER = "current_weather_json"
-    const val KEY_FORECAST_WEATHER = "forecast_weather_json"
-    const val KEY_LATITUDE = "latitude"
-    const val KEY_LONGITUDE = "longitude"
+    const val BASE_URL = "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline"
+    const val API_KEY = BuildConfig.WEATHER_API_KEY
+    const val TODAY_WEATHER_TABLE = "today_weather"
+    const val FORECAST_TABLE = "forecast"
 }
