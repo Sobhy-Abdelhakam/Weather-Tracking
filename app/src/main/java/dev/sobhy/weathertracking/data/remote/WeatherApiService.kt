@@ -4,87 +4,44 @@ import android.util.Log
 import dev.sobhy.weathertracking.BuildConfig
 import dev.sobhy.weathertracking.domain.model.ForecastDay
 import dev.sobhy.weathertracking.domain.model.WeatherInfo
+import dev.sobhy.weathertracking.helper.Constant.API_KEY
+import dev.sobhy.weathertracking.helper.Constant.BASE_URL
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import java.io.BufferedReader
+import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
 
-object WeatherApiService {
-    private const val BASE_URL =
-        "https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline"
-    private const val API_KEY = BuildConfig.WEATHER_API_KEY
+class WeatherApiService {
 
-
-    fun fetchWeatherJson(lat: Double, long: Double): String? {
-        val urlStr = "$BASE_URL/$lat,$long/today?unitGroup=metric&key=$API_KEY&include=current"
-        return fetchJson(urlStr)
+    suspend fun fetchTodayWeather(lat: Double, long: Double): WeatherResponseDto = withContext(Dispatchers.IO) {
+        val url = "$BASE_URL/$lat,$long/today?unitGroup=metric&key=$API_KEY"
+        val response = fetchJson(url)
+        val jsonObject = JSONObject(response)
+        WeatherResponseDto.fromJson(jsonObject)
     }
 
-    fun fetchForecastJson(lat: Double, long: Double): String? {
+    suspend fun fetchForecastJson(lat: Double, long: Double): ForecastResponseDto = withContext(Dispatchers.IO) {
         val urlStr = "$BASE_URL/$lat,$long?unitGroup=metric&key=$API_KEY&include=days"
-        return fetchJson(urlStr)
+        val response = fetchJson(urlStr)
+        val jsonObject = JSONObject(response)
+        ForecastResponseDto.fromJson(jsonObject)
     }
 
-    private fun fetchJson(urlStr: String): String? {
-        return try {
-            val url = URL(urlStr)
-            val connection = (url.openConnection() as HttpURLConnection).apply {
-                connectTimeout = 5000
-                readTimeout = 5000
-            }
-
-            if (connection.responseCode == HttpURLConnection.HTTP_OK) {
-                connection.inputStream.bufferedReader().readText()
-            } else null
-
-        } catch (e: Exception) {
-            Log.e("WeatherApiService", "Network error: ${e.localizedMessage}")
-            null
+    private fun fetchJson(urlStr: String): String {
+        val url = URL(urlStr)
+        val connection = (url.openConnection() as HttpURLConnection).apply {
+            connectTimeout = 5000
+            readTimeout = 5000
         }
-    }
 
-    fun parseWeatherJson(json: String?): WeatherInfo? {
-        return try {
-            val obj = JSONObject(json ?: return null)
-            val current = obj.getJSONObject("currentConditions")
-            val today = obj.getJSONArray("days").getJSONObject(0)
+        val reader = BufferedReader(InputStreamReader(connection.inputStream))
+        val response = StringBuilder()
+        reader.useLines { lines -> lines.forEach { response.append(it) } }
 
-            WeatherInfo(
-                temperature = current.getDouble("temp"),
-                minTemp = today.getDouble("tempmin"),
-                maxTemp = today.getDouble("tempmax"),
-                description = current.getString("conditions"),
-                icon = current.getString("icon"),
-                dateTime = current.getString("datetime"),
-                windSpeed = current.getDouble("windspeed"),
-                humidity = current.getDouble("humidity")
-            )
-        } catch (e: Exception) {
-            Log.e("WeatherApiService", "Error parsing JSON: ${e.localizedMessage}")
-            null
-        }
-    }
-    fun parseForecastJson(json: String?): List<ForecastDay>? {
-        return try {
-            val obj = JSONObject(json ?: return null)
-            val daysArray = obj.getJSONArray("days")
-            val forecastList = mutableListOf<ForecastDay>()
-
-            for (i in 1 until minOf(6, daysArray.length())) {
-                val day = daysArray.getJSONObject(i)
-                forecastList.add(
-                    ForecastDay(
-                        date = day.getString("datetime"),
-                        maxTemp = day.getDouble("tempmax"),
-                        minTemp = day.getDouble("tempmin"),
-                        description = day.getString("conditions"),
-                        icon = day.getString("icon")
-                    )
-                )
-            }
-            forecastList
-        } catch (e: Exception) {
-            Log.e("WeatherApiService", "Error parsing JSON: ${e.localizedMessage}")
-            null
-        }
+        connection.disconnect()
+        return response.toString()
     }
 }
