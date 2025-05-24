@@ -1,6 +1,11 @@
 package dev.sobhy.weathertracking.presentation.currentweather
 
-import androidx.compose.foundation.background
+import android.Manifest
+import android.app.Activity.RESULT_OK
+import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,184 +15,201 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.Indicator
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import dev.sobhy.weathertracking.domain.model.WeatherInfo
+import dev.sobhy.weathertracking.domain.weather.WeatherData
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WeatherScreen(
-    latitude: Double,
-    longitude: Double,
+    navigateToForecastScreen: () -> Unit,
     viewModel: WeatherViewModel = viewModel(factory = WeatherViewModel.Factory),
-    navigateToForecastScreen: () -> Unit
 ) {
+    val context = LocalContext.current
     val state = viewModel.state
-
     val refreshing = state.isLoading
     val pullToRefreshState = rememberPullToRefreshState()
 
-    LaunchedEffect(Unit) {
-        // avoid multiple calls
-        if (!state.isLoading && state.weather == null) {
-            viewModel.loadWeather(latitude, longitude)
+    val settingResultRequest = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartIntentSenderForResult()
+    ) { activityResult ->
+        if (activityResult.resultCode == RESULT_OK) {
+            Log.d("appDebug", "Accepted")
+        } else {
+            Log.d("appDebug", "Denied")
+        }
+        viewModel.loadWeather()
+    }
+
+    val locationPermissionRequest = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val granted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+                permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        if (granted) {
+            viewModel.checkLocationSetting(
+                context,
+                onDisabled = { settingResultRequest.launch(it) },
+                onEnabled = { viewModel.loadWeather() }
+            )
+        } else {
+//            viewModel.showError("Location permission denied")
         }
     }
 
-    PullToRefreshBox(
-        isRefreshing = refreshing,
-        state = pullToRefreshState,
-        onRefresh = {
-            viewModel.loadWeather(latitude, longitude)
-        },
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+    LaunchedEffect(Unit) {
+        locationPermissionRequest.launch(
+            arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            )
+        )
+    }
+
+    val locationName by produceState(initialValue = "") {
+        value = viewModel.getAddressText(context, viewModel.lat, viewModel.long)
+    }
+
+    Scaffold {
+        PullToRefreshBox(
+            isRefreshing = refreshing,
+            state = pullToRefreshState,
+            onRefresh = { viewModel.loadWeather() },
+            indicator = {
+                Indicator(
+                    modifier = Modifier.align(Alignment.TopCenter),
+                    isRefreshing = refreshing,
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    state = pullToRefreshState
+                )
+            },
+            modifier = Modifier.padding(it)
         ) {
             when {
-                refreshing-> CircularProgressIndicator()
-                state.error != null -> {
+                refreshing -> Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+
+                state.error != null -> Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("Error: ${state.error}")
                         Spacer(modifier = Modifier.height(8.dp))
-                        Button(onClick = { viewModel.loadWeather(latitude, longitude) }) {
+                        Button(onClick = { viewModel.loadWeather() }) {
                             Text("Retry")
                         }
                     }
                 }
 
                 else -> {
-                    state.weather?.let { weather ->
-                        Content(weather = weather, forecastClick = navigateToForecastScreen)
+                    state.weatherData?.let { weather ->
+                        Column {
+                            Content(
+                                weather = weather,
+                                forecastClick = navigateToForecastScreen,
+                                locationName
+                            )
+                        }
                     }
                 }
             }
         }
-
     }
 }
-
 @Composable
-fun Content(weather: WeatherInfo, forecastClick: () -> Unit) {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-    ) {
-        Spacer(modifier = Modifier.weight(1f))
-        WeatherContent(weather = weather)
-        Spacer(modifier = Modifier.weight(1f))
-        Button(
-            onClick = forecastClick,
-            modifier = Modifier.align(Alignment.CenterHorizontally),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color.White.copy(0.8f),
-                contentColor = Color.Black
-            ),
-            elevation = ButtonDefaults.buttonElevation(
-                defaultElevation = 4.dp
-            )
-        ) {
-            Row(modifier = Modifier.padding(8.dp)) {
-                Text(
-                    "Forecast Weather",
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(end = 8.dp)
-                )
-                Icon(Icons.AutoMirrored.Default.ArrowForward, contentDescription = null)
-            }
-
-        }
-    }
-}
-
-@Composable
-fun WeatherContent(weather: WeatherInfo) {
+fun LoadingUI() {
     Box(
         modifier = Modifier
-            .fillMaxWidth()
-            .shadow( // <- Elevation applied here (outside)
-                elevation = 4.dp,
-                shape = RoundedCornerShape(16.dp),
-                spotColor = Color(0x40888888) // More natural shadow
-            )
-            .padding(8.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(Color.White.copy(alpha = 0.3f))
+            .fillMaxSize()
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text("Now, ${weather.dateTime}", color = Color.White)
-            Text(
-                "${weather.temperature.toInt()}°",
-                color = Color.White,
-                style = MaterialTheme.typography.displayMedium,
-                modifier = Modifier.padding(top = 8.dp)
-            )
-            Text(
-                "${weather.minTemp}° / ${weather.maxTemp}°",
-                color = Color.White,
-                style = MaterialTheme.typography.labelLarge
-            )
-            Text(
-                weather.description,
-                color = Color.White,
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(vertical = 16.dp)
-            )
-            Text(
-                "Wind Speed: ${weather.windSpeed.toInt()} km/h",
-                color = Color.White,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-            Text("Humidity: ${weather.humidity.toInt()}%", color = Color.White)
-        }
-
+        CircularProgressIndicator()
     }
 }
-//
-//@Preview(showBackground = true, showSystemUi = true)
-//@Composable
-//fun WeatherScreenPreview() {
-//    val sampleWeather = WeatherInfo(
-//        temperature = 22.5,
-//        minTemp = 18.0,
-//        maxTemp = 26.0,
-//        description = "Partly Cloudy",
-//        icon = "partly-cloudy",
-//        dateTime = "2023-05-15T14:00:00",
-//        windSpeed = 12.3,
-//        humidity = 65.0
-//    )
-//
-//    Content(weather = sampleWeather)
-//}
+@Composable
+fun ErrorUI(errorMessage: String, onRetry: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("Error: $errorMessage", color = MaterialTheme.colorScheme.error)
+            Spacer(modifier = Modifier.height(8.dp))
+            Button(onClick = onRetry) {
+                Text("Retry")
+            }
+        }
+    }
+}
 
+@Composable
+fun Content(weather: WeatherData, forecastClick: () -> Unit, locationName: String) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        LocationHeader(locationName, modifier = Modifier.align(Alignment.CenterHorizontally))
+//        Spacer(modifier = Modifier.height(16.dp))
+        CurrentWeatherCard(
+            weatherData = weather,
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            modifier = Modifier.fillMaxWidth()
+        )
+//        Spacer(modifier = Modifier.height(16.dp))
+        TodayWeather(weather.weatherDuringTheDay, forecastClick)
+    }
+}
+@Composable
+fun LocationHeader(locationName: String, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = locationName,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        Icon(imageVector = Icons.Default.LocationOn, contentDescription = null)
+    }
+}
