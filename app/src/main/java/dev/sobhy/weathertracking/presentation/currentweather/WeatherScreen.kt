@@ -37,6 +37,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.sobhy.weathertracking.domain.weather.WeatherData
@@ -179,6 +180,7 @@ fun LocationHeader(locationName: String, modifier: Modifier = Modifier) {
     ) {
         Text(
             text = locationName,
+            fontWeight = FontWeight.Bold,
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onBackground
         )

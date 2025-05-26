@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.sobhy.weathertracking.R
 import dev.sobhy.weathertracking.domain.weather.WeatherData
@@ -62,7 +63,7 @@ fun CurrentWeatherCard(
 
             )
             Text(
-                "${weather.temperature.toInt()}°",
+                "${weather.temperature.roundToInt()}°",
                 style = MaterialTheme.typography.displayLarge,
             )
             Text(
@@ -71,7 +72,7 @@ fun CurrentWeatherCard(
             )
             Text(
                 weather.description,
-                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
             )
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -91,7 +92,6 @@ fun CurrentWeatherCard(
                     value = weather.windSpeed.roundToInt(),
                     unit = "km/h",
                     icon = ImageVector.vectorResource(id = R.drawable.ic_wind),
-//                    textStyle = TextStyle(color = Color.White)
                 )
             }
         }

@@ -4,8 +4,10 @@ import android.content.Context
 import android.content.IntentSender
 import android.location.Address
 import android.location.Geocoder
+import android.os.Build
 import android.util.Log
 import androidx.activity.result.IntentSenderRequest
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -72,6 +74,7 @@ class WeatherViewModel(
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     suspend fun getAddressText(
         context: Context,
         lat: Double,

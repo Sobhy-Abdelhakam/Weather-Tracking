@@ -9,6 +9,8 @@ import dev.sobhy.weathertracking.domain.weather.ForecastDay
 import dev.sobhy.weathertracking.domain.weather.HourlyWeather
 import dev.sobhy.weathertracking.domain.weather.WeatherData
 import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 fun HourlyDto.toHourlyWeather(): HourlyWeather {
@@ -39,13 +41,18 @@ fun ForecastResponseDto.toForecastDays(): List<ForecastDay> {
 
 fun ForecastDto.toForecastDay(): ForecastDay {
     return ForecastDay(
-        date = date,
+        date = convertDateFormat(date),
         maxTemp = maxTemp,
         minTemp = minTemp,
         description = description,
         icon = convertIconStringToResource(icon),
 
         )
+}
+fun convertDateFormat(date: String): String {
+    val parsedDate = LocalDate.parse(date)
+    val formatter = DateTimeFormatter.ofPattern("dd MMM")
+    return parsedDate.format(formatter)
 }
 
 fun convertTo12HourFormat(time24: String): String {

@@ -25,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.sobhy.weathertracking.domain.weather.HourlyWeather
+import kotlin.math.roundToInt
 
 @Composable
 fun TodayWeather(
@@ -32,30 +33,28 @@ fun TodayWeather(
     forecastClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    ElevatedCard(
-        colors = CardDefaults.cardColors(
-            contentColor = Color.White
-        ),
-        modifier = modifier.padding(16.dp),
-    ) {
+//    ElevatedCard(
+//        colors = CardDefaults.cardColors(
+//            contentColor = Color.White
+//        ),
+//        modifier = modifier.padding(16.dp),
+//    ) {
         Column(
             modifier = modifier
-                .fillMaxWidth()
-                .padding(4.dp)
+//                .fillMaxWidth()
+                .padding(16.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     "Today",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontSize = 20.sp,
+                    style = MaterialTheme.typography.titleLarge,
                 )
                 TextButton(
-                    onClick = {
-                        forecastClick()
-                    }
+                    onClick = forecastClick
                 ) {
                     Text("Next 5 days")
                 }
@@ -68,12 +67,12 @@ fun TodayWeather(
                         hourlyWeather = hourlyWeather,
                         modifier = Modifier
                             .height(100.dp)
-                            .padding(horizontal = 8.dp)
+                            .padding(end = 12.dp)
                     )
                 }
             }
         }
-    }
+//    }
 }
 
 @Composable
@@ -89,6 +88,6 @@ fun HourlyWeatherDisplay(hourlyWeather: HourlyWeather, modifier: Modifier = Modi
             contentDescription = null,
             modifier = Modifier.size(40.dp)
         )
-        Text("${hourlyWeather.temperature}°", fontWeight = FontWeight.Bold)
+        Text("${hourlyWeather.temperature.roundToInt()}°", fontWeight = FontWeight.Bold)
     }
 }
