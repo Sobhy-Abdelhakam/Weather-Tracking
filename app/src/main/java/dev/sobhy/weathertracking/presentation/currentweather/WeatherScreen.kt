@@ -1,10 +1,10 @@
 package dev.sobhy.weathertracking.presentation.currentweather
 
 import android.Manifest
-import android.app.Activity.RESULT_OK
-import android.util.Log
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,10 +30,6 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.Indicator
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -42,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.sobhy.weathertracking.domain.weather.WeatherData
 
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WeatherScreen(
@@ -50,19 +47,11 @@ fun WeatherScreen(
 ) {
     val context = LocalContext.current
     val state = viewModel.state
-    val refreshing = state.isLoading
     val pullToRefreshState = rememberPullToRefreshState()
 
     val settingResultRequest = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartIntentSenderForResult()
-    ) { activityResult ->
-        if (activityResult.resultCode == RESULT_OK) {
-            Log.d("appDebug", "Accepted")
-        } else {
-            Log.d("appDebug", "Denied")
-        }
-        viewModel.loadWeather()
-    }
+    ) { viewModel.loadWeather(context) }
 
     val locationPermissionRequest = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -73,36 +62,31 @@ fun WeatherScreen(
             viewModel.checkLocationSetting(
                 context,
                 onDisabled = { settingResultRequest.launch(it) },
-                onEnabled = { viewModel.loadWeather() }
+                onEnabled = { viewModel.loadWeather(context) }
             )
-        } else {
-//            viewModel.showError("Location permission denied")
         }
     }
 
     LaunchedEffect(Unit) {
-        locationPermissionRequest.launch(
-            arrayOf(
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION
+        if (!viewModel.hasLocationPermissions(context)) {
+            locationPermissionRequest.launch(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                )
             )
-        )
-    }
-
-    var locationName by remember { mutableStateOf("") }
-    LaunchedEffect(viewModel.lat, viewModel.long) {
-        locationName = viewModel.getAddressText(context, viewModel.lat, viewModel.long)
+        }
     }
 
     Scaffold {
         PullToRefreshBox(
-            isRefreshing = refreshing,
+            isRefreshing = state.isLoading,
             state = pullToRefreshState,
-            onRefresh = { viewModel.loadWeather() },
+            onRefresh = { viewModel.loadWeather(context) },
             indicator = {
                 Indicator(
                     modifier = Modifier.align(Alignment.TopCenter),
-                    isRefreshing = refreshing,
+                    isRefreshing = state.isLoading,
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                     state = pullToRefreshState
@@ -111,12 +95,12 @@ fun WeatherScreen(
             modifier = Modifier.padding(it)
         ) {
             when {
-                refreshing -> LoadingUI()
+                state.isLoading -> LoadingUI()
 
-                state.error != null -> ErrorUI(state.error) { viewModel.loadWeather() }
+                state.error != null -> ErrorUI(state.error) { viewModel.loadWeather(context) }
 
                 else -> state.weatherData?.let { weather ->
-                    Content(weather, navigateToForecastScreen, locationName)
+                    Content(weather, navigateToForecastScreen, viewModel.locationName)
                 }
 
             }
