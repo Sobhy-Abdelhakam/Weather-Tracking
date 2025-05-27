@@ -33,15 +33,8 @@ fun TodayWeather(
     forecastClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-//    ElevatedCard(
-//        colors = CardDefaults.cardColors(
-//            contentColor = Color.White
-//        ),
-//        modifier = modifier.padding(16.dp),
-//    ) {
         Column(
             modifier = modifier
-//                .fillMaxWidth()
                 .padding(16.dp)
         ) {
             Row(
@@ -67,12 +60,11 @@ fun TodayWeather(
                         hourlyWeather = hourlyWeather,
                         modifier = Modifier
                             .height(100.dp)
-                            .padding(end = 12.dp)
+                            .padding(end = 16.dp)
                     )
                 }
             }
         }
-//    }
 }
 
 @Composable

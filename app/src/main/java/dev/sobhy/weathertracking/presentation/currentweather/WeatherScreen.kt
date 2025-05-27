@@ -1,10 +1,8 @@
 package dev.sobhy.weathertracking.presentation.currentweather
 
 import android.Manifest
-import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +17,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.Button
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -38,7 +37,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.sobhy.weathertracking.domain.weather.WeatherData
 
-@RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WeatherScreen(
@@ -75,10 +73,20 @@ fun WeatherScreen(
                     Manifest.permission.ACCESS_COARSE_LOCATION
                 )
             )
+        } else if (state.weatherData == null){
+            viewModel.loadWeather(context)
         }
     }
 
-    Scaffold {
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = {
+                    LocationHeader(viewModel.locationName)
+                }
+            )
+        }
+    ) {
         PullToRefreshBox(
             isRefreshing = state.isLoading,
             state = pullToRefreshState,
@@ -100,7 +108,7 @@ fun WeatherScreen(
                 state.error != null -> ErrorUI(state.error) { viewModel.loadWeather(context) }
 
                 else -> state.weatherData?.let { weather ->
-                    Content(weather, navigateToForecastScreen, viewModel.locationName)
+                    Content(weather, navigateToForecastScreen)
                 }
 
             }
@@ -139,14 +147,13 @@ fun ErrorUI(errorMessage: String, onRetry: () -> Unit) {
 }
 
 @Composable
-fun Content(weather: WeatherData, forecastClick: () -> Unit, locationName: String) {
+fun Content(weather: WeatherData, forecastClick: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        LocationHeader(locationName, modifier = Modifier.align(Alignment.CenterHorizontally))
         CurrentWeatherCard(
             weatherData = weather,
             containerColor = MaterialTheme.colorScheme.primaryContainer,

@@ -28,10 +28,12 @@ import dev.sobhy.weathertracking.WeatherApplication
 import dev.sobhy.weathertracking.domain.location.LocationTracker
 import dev.sobhy.weathertracking.domain.repository.WeatherRepository
 import dev.sobhy.weathertracking.domain.util.Resource
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
 import java.util.Locale
-import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 
 class WeatherViewModel(
     private val repository: WeatherRepository,
@@ -43,7 +45,6 @@ class WeatherViewModel(
     var locationName by mutableStateOf("")
 
 
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     fun loadWeather(context: Context) {
         viewModelScope.launch {
             state = state.copy(isLoading = true, error = null)
@@ -74,31 +75,38 @@ class WeatherViewModel(
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    @OptIn(ExperimentalCoroutinesApi::class)
     suspend fun getAddressText(
         context: Context,
         lat: Double,
         long: Double,
-    ): String = suspendCoroutine { continuation ->
-        val geocoder = Geocoder(context, Locale.getDefault())
+    ): String = withContext(Dispatchers.IO) {
         try {
-            geocoder.getFromLocation(lat, long, 1, object : Geocoder.GeocodeListener {
-                override fun onGeocode(addresses: List<Address?>) {
-                    val address = addresses.firstOrNull()
-                    val location = listOfNotNull(address?.locality, address?.subAdminArea)
-                        .filter { it.isNotBlank() }
-                        .joinToString(", ")
-                        .ifEmpty { "Unknown Location" }
+            val geocoder = Geocoder(context, Locale.getDefault())
+            val addresses = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                suspendCancellableCoroutine<List<Address>> { cont ->
+                    geocoder.getFromLocation(lat, long, 1, object : Geocoder.GeocodeListener {
+                        override fun onGeocode(addresses: List<Address?>) {
+                            cont.resume(addresses.filterNotNull()) {}
+                        }
 
-                    continuation.resume(location)
+                        override fun onError(errorMessage: String?) {
+                            cont.resume(emptyList()) {}
+                        }
+                    })
                 }
+            } else {
+                @Suppress("DEPRECATION")
+                geocoder.getFromLocation(lat, long, 1) ?: emptyList()
+            }
 
-                override fun onError(errorMessage: String?) {
-                    continuation.resume("Unknown Location")
-                }
-            })
+            val address = addresses.firstOrNull()
+            listOfNotNull(address?.locality, address?.subAdminArea)
+                .filter { it.isNotBlank() }
+                .joinToString(", ")
+                .ifEmpty { "Unknown Location" }
         } catch (_: Exception) {
-            continuation.resume("Unknown Location")
+            "Unknown Location"
         }
     }
 

@@ -22,7 +22,11 @@ fun WeatherNavGraph() {
             )
         }
         composable(route = Screen.Forecast.route) {
-            ForecastScreen()
+            ForecastScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
         }
     }
 }
