@@ -9,7 +9,6 @@ import android.location.Geocoder
 import android.os.Build
 import android.util.Log
 import androidx.activity.result.IntentSenderRequest
-import androidx.annotation.RequiresApi
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
