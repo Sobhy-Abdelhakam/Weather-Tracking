@@ -1,4 +1,4 @@
-package dev.sobhy.weathertracking.domain.weather
+package dev.sobhy.weathertracking.domain.model
 
 data class WeatherData(
     val currentWeatherData: HourlyWeather,

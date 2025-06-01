@@ -1,6 +1,6 @@
 package dev.sobhy.weathertracking.presentation.currentweather
 
-import dev.sobhy.weathertracking.domain.weather.WeatherData
+import dev.sobhy.weathertracking.domain.model.WeatherData
 
 data class WeatherUiState(
     val isLoading: Boolean = false,

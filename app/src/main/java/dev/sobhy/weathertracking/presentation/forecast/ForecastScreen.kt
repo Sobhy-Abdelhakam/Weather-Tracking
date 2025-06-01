@@ -25,7 +25,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -33,7 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import dev.sobhy.weathertracking.domain.weather.ForecastDay
+import dev.sobhy.weathertracking.domain.model.ForecastDay
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,11 +42,6 @@ fun ForecastScreen(
     viewModel: ForecastViewModel = viewModel(factory = ForecastViewModel.Factory),
 ) {
     val state = viewModel.uiState
-    LaunchedEffect(Unit) {
-        if (!state.isLoading && state.forecast.isEmpty()) {
-            viewModel.loadForecast()
-        }
-    }
 
     Scaffold(
         topBar = {

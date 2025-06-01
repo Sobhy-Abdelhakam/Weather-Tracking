@@ -1,8 +1,5 @@
 package dev.sobhy.weathertracking.presentation.currentweather
 
-import android.Manifest
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,14 +25,12 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.Indicator
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import dev.sobhy.weathertracking.domain.weather.WeatherData
+import dev.sobhy.weathertracking.domain.model.WeatherData
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,54 +38,20 @@ fun WeatherScreen(
     navigateToForecastScreen: () -> Unit,
     viewModel: WeatherViewModel = viewModel(factory = WeatherViewModel.Factory),
 ) {
-    val context = LocalContext.current
     val state = viewModel.state
     val pullToRefreshState = rememberPullToRefreshState()
-
-    val settingResultRequest = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartIntentSenderForResult()
-    ) { viewModel.loadWeather(context) }
-
-    val locationPermissionRequest = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        val granted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
-                permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
-        if (granted) {
-            viewModel.checkLocationSetting(
-                context,
-                onDisabled = { settingResultRequest.launch(it) },
-                onEnabled = { viewModel.loadWeather(context) }
-            )
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        if (!viewModel.hasLocationPermissions(context)) {
-            locationPermissionRequest.launch(
-                arrayOf(
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-                )
-            )
-        } else if (state.weatherData == null){
-            viewModel.loadWeather(context)
-        }
-    }
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = {
-                    LocationHeader(viewModel.locationName)
-                }
+                title = { LocationHeader(viewModel.locationName) }
             )
         }
-    ) {
+    ) { innerPadding ->
         PullToRefreshBox(
             isRefreshing = state.isLoading,
             state = pullToRefreshState,
-            onRefresh = { viewModel.loadWeather(context) },
+            onRefresh = { viewModel.loadWeather() },
             indicator = {
                 Indicator(
                     modifier = Modifier.align(Alignment.TopCenter),
@@ -100,12 +61,14 @@ fun WeatherScreen(
                     state = pullToRefreshState
                 )
             },
-            modifier = Modifier.padding(it)
+            modifier = Modifier.padding(innerPadding)
         ) {
             when {
                 state.isLoading -> LoadingUI()
 
-                state.error != null -> ErrorUI(state.error) { viewModel.loadWeather(context) }
+                state.error != null -> ErrorUI(state.error) {
+                    viewModel.loadWeather()
+                }
 
                 else -> state.weatherData?.let { weather ->
                     Content(weather, navigateToForecastScreen)

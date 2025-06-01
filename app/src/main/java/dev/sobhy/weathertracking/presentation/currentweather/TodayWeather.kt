@@ -21,7 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import dev.sobhy.weathertracking.domain.weather.HourlyWeather
+import dev.sobhy.weathertracking.domain.model.HourlyWeather
 import kotlin.math.roundToInt
 
 @Composable

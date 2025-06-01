@@ -5,9 +5,9 @@ import dev.sobhy.weathertracking.data.remote.ForecastDto
 import dev.sobhy.weathertracking.data.remote.ForecastResponseDto
 import dev.sobhy.weathertracking.data.remote.HourlyDto
 import dev.sobhy.weathertracking.data.remote.WeatherResponseDto
-import dev.sobhy.weathertracking.domain.weather.ForecastDay
-import dev.sobhy.weathertracking.domain.weather.HourlyWeather
-import dev.sobhy.weathertracking.domain.weather.WeatherData
+import dev.sobhy.weathertracking.domain.model.ForecastDay
+import dev.sobhy.weathertracking.domain.model.HourlyWeather
+import dev.sobhy.weathertracking.domain.model.WeatherData
 import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
