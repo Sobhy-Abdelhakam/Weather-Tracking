@@ -1,8 +1,6 @@
 package dev.sobhy.weathertracking
 
 import android.app.Application
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationServices
 import dev.sobhy.weathertracking.data.local.SharedPreferencesManager
 import dev.sobhy.weathertracking.data.local.WeatherCacheManager
 import dev.sobhy.weathertracking.data.local.WeatherDatabaseHelper
