@@ -26,35 +26,34 @@ class WeatherViewModel(private val weatherUseCase: GetWeatherUseCase) : ViewMode
     private var latitude: Double? = null
     private var longitude: Double? = null
 
+    init {
+        loadWeather()
+    }
+
     private fun loadStoredCoordinates() {
         latitude = SharedPreferencesManager.getString(LATITUDE, null)?.toDoubleOrNull()
         longitude = SharedPreferencesManager.getString(LONGITUDE, null)?.toDoubleOrNull()
         locationName = SharedPreferencesManager.getString(LOCATION_NAME, "") ?: ""
     }
 
-    init {
-        loadWeather()
-    }
-
     fun loadWeather() {
         viewModelScope.launch {
             state = state.copy(isLoading = true, error = null)
             loadStoredCoordinates()
-            if (latitude != null && longitude != null) {
-                val result = weatherUseCase(latitude, longitude)
-
-                state = state.copy(
-                    isLoading = false,
-                    weatherData = (result as? Resource.Success)?.data,
-                    error = (result as? Resource.Error)?.message
-                )
-            } else {
+            if (latitude == null || longitude == null) {
                 state = state.copy(
                     isLoading = false,
                     weatherData = null,
                     error = "No cached data available."
                 )
+                return@launch
             }
+            val result = weatherUseCase(latitude, longitude)
+            state = state.copy(
+                isLoading = false,
+                weatherData = (result as? Resource.Success)?.data,
+                error = (result as? Resource.Error)?.message
+            )
         }
     }
 

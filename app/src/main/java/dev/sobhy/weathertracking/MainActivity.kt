@@ -11,6 +11,10 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions
 import androidx.activity.result.contract.ActivityResultContracts.StartIntentSenderForResult
+import androidx.compose.runtime.mutableStateOf
+import dev.sobhy.weathertracking.data.local.SharedPreferencesManager
+import dev.sobhy.weathertracking.helper.Constant.LATITUDE
+import dev.sobhy.weathertracking.helper.Constant.LONGITUDE
 import dev.sobhy.weathertracking.helper.LocationManagerHelper
 import dev.sobhy.weathertracking.presentation.navigation.WeatherNavGraph
 import dev.sobhy.weathertracking.ui.theme.WeatherTrackingTheme
@@ -29,16 +33,25 @@ class MainActivity : ComponentActivity() {
         ::onSettingsResult
     )
 
+    private val locationReady = mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
+        locationReady.value = hasStoredLocation()
+
         requestOrFetchLocation()
         setContent { WeatherTrackingTheme {
-
-            WeatherNavGraph()
+            if (locationReady.value) {
+                WeatherNavGraph()
+            }
         } }
+    }
+    private fun hasStoredLocation(): Boolean {
+        val lat = SharedPreferencesManager.getString(LATITUDE, null)
+        val lon = SharedPreferencesManager.getString(LONGITUDE, null)
+        return lat?.toDoubleOrNull() != null && lon?.toDoubleOrNull() != null
     }
 
     private fun requestOrFetchLocation() {
@@ -81,6 +94,7 @@ class MainActivity : ComponentActivity() {
         location?.let {
             locationManagerHelper.saveLocationToPrefs(it)
             locationManagerHelper.getLocationName(it)
+            locationReady.value = true
         }
     }
 
