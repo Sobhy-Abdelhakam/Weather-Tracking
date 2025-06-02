@@ -21,7 +21,7 @@ import dev.sobhy.weathertracking.ui.theme.WeatherTrackingTheme
 
 class MainActivity : ComponentActivity() {
 
-    private val locationManagerHelper by lazy { LocationManagerHelper(applicationContext) }
+    private val locationManagerHelper by lazy { LocationManagerHelper(this) }
 
     private val locationPermissionRequest = registerForActivityResult(
         RequestMultiplePermissions(),
@@ -40,12 +40,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         locationReady.value = hasStoredLocation()
-
         requestOrFetchLocation()
+
         setContent { WeatherTrackingTheme {
-            if (locationReady.value) {
-                WeatherNavGraph()
-            }
+            if (locationReady.value) WeatherNavGraph()
         } }
     }
     private fun hasStoredLocation(): Boolean {
